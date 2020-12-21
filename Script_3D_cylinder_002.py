@@ -275,12 +275,12 @@ myRP2,myRP_Position2 = Create_Reference_Point(0.0,0.0,myLength,myString,"RP-2")
 Create_Constraint_Equation(myString,"Constraint-RP-1","Cylinder-1."+str("Set-RP-1"),"RP-1")
 Create_Constraint_Equation(myString,"Constraint-RP-2","Cylinder-1."+str("Set-RP-2"),"RP-2")
 
-Create_Analysis_Step(myString,"Step-1","Initial",1.0,1.0,1E-05,100,ON)
-Create_Analysis_Step(myString,"Step-2","Step-1",0.01,0.01,1E-015,300,ON)
+#Create_Analysis_Step(myString,"Step-1","Initial",1.0,1.0,1E-05,100,ON)
+Create_Analysis_Step(myString,"Step-1","Initial",0.01,0.01,1E-015,300,ON)
 
 Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","Set-RP-1","BC-Set-RP-1","Initial",SET,SET,UNSET,UNSET,UNSET,UNSET)
 Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,UNSET,UNSET,UNSET)
-Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNSET,UNSET,20,UNSET,UNSET,UNSET)
+Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-1",UNSET,UNSET,20,UNSET,UNSET,UNSET)
 
 
 Create_Partion_by_Plane(myString,myPart,myID_3)
@@ -289,7 +289,7 @@ Create_Partion_by_Plane(myString,myPart,myID_1)
 Create_Partion_by_Plane(myString,myPart,myID_2)
 
 Create_Set_Edge(myRadius-myThickness/2.0,0.0,myLength/2.0,myString,myPart,"Set-SPDA-Point")
-Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","Set-SPDA-Point","BC-Imperfection","Step-1",0.0,UNSET,UNSET,UNSET,UNSET,UNSET)
+#Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","Set-SPDA-Point","BC-Imperfection","Step-1",0.0,UNSET,UNSET,UNSET,UNSET,UNSET)
 Create_Set_Vertice(0.0,myRadius,myLength/2.0,myString,myPart,"SPLA_Point")
 #Create_SPLA(myString,"Cylinder-1","SPLA_Point","Perturbation_Load","Step-1",-1000.0)
 #Create_Pressure_Load(myString,"Cylinder-1","Internal_Pressure","Step-1","Internal_Surface",10)
@@ -305,7 +305,7 @@ myFace = Create_Set_Face(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surfac
 AssignStack(myString,myPart,myFace)
 
 CreateJob(myString,"CFRP_Tube_1",8)
-SubmitJob("CFRP_Tube_1")
+#SubmitJob("CFRP_Tube_1")
 
 
 #--------------------
