@@ -67,7 +67,7 @@ def Create_Set_Face(x,y,z,model,part,set_name):
     myFace = f.findAt((x,y,z),)
     face = face + (f[myFace.index:myFace.index+1], )
     p.Set(faces=face, name=set_name)
-    
+    return myFace
 
 def Create_Set_Edge(x,y,z,model,part,set_name):
     edge = ()
@@ -76,6 +76,7 @@ def Create_Set_Edge(x,y,z,model,part,set_name):
     myEdge = e.findAt((x,y,z),)
     edge = edge + (e[myEdge.index:myEdge.index+1], )
     f = p.Set(edges=edge, name=set_name)
+    return myEdge
 
 
 #-----------------------------------------------------------------------------
@@ -181,23 +182,30 @@ def Create_Pressure_Load(model,instance_name,load_name,step_name,surface,load):
     region = a.instances[instance_name].surfaces[surface]
     mdb.models[model].Pressure(name=load_name, createStepName=step_name, region=region, distributionType=UNIFORM, field='', magnitude=load, amplitude=UNSET)    
 
-# def Create_Cutout():
-# p = mdb.models[model].parts[part]
-# e, d = p.edges, p.datums
-# t = p.MakeSketchTransform(sketchPlane=d[id_datum], sketchUpEdge=e[29], sketchPlaneSide=SIDE1, sketchOrientation=RIGHT, origin=(0.0, 50.0, 263.0))
-# s = mdb.models[model].ConstrainedSketch(name='__profile__', sheetSize=1172.7, gridSpacing=29.31, transform=t)
-# g, v, d1, c = s.geometry, s.vertices, s.dimensions, s.constraints
-# s.setPrimaryObject(option=SUPERIMPOSE)
+def CreateCutout(model,part,radius_cutout,id_plane,edge,x,y,z):
+    p = mdb.models[model].parts[part]
+    e, d = p.edges, p.datums
+    t = p.MakeSketchTransform(sketchPlane=d[id_plane], sketchUpEdge=edge, sketchPlaneSide=SIDE1, sketchOrientation=RIGHT, origin=(x, y, z))
+    s = mdb.models[model].ConstrainedSketch(name='__profile__', sheetSize=2000.0, gridSpacing=20.0, transform=t)
+    g, v, d1, c = s.geometry, s.vertices, s.dimensions, s.constraints
+    s.setPrimaryObject(option=SUPERIMPOSE)
+    p.projectReferencesOntoSketch(sketch=s, filter=COPLANAR_EDGES)
+    s.CircleByCenterPerimeter(center=(0.0, 0.0), point1=(radius_cutout, 0.0))
+    p.CutExtrude(sketchPlane=d[id_plane], sketchUpEdge=edge, sketchPlaneSide=SIDE1, sketchOrientation=RIGHT, sketch=s, flipExtrudeDirection=OFF)
+    s.unsetPrimaryObject()
+    del mdb.models[model].sketches['__profile__']
 
-# p.projectReferencesOntoSketch(sketch=s, filter=COPLANAR_EDGES)
-# s.CircleByCenterPerimeter(center=(0.0, 0.0), point1=(7.5, 0.0))
+def AssignStack(model,part,face):
+    p = mdb.models[model].parts[part]
+    c = p.cells[:]
+    p.assignStackDirection(referenceRegion=face, cells=c)
 
-# e1, d2 = p.edges, p.datums
-# p.CutExtrude(sketchPlane=d2[id_datum], sketchUpEdge=e1[29], sketchPlaneSide=SIDE1, sketchOrientation=RIGHT, sketch=s, flipExtrudeDirection=OFF)
-# s.unsetPrimaryObject()
-# del mdb.models[model].sketches['__profile__']
+def CreateJob(model,job_name,cpu):
+    a = mdb.models[model].rootAssembly
+    mdb.Job(name=job_name, model=model, description='', type=ANALYSIS, atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=90, memoryUnits=PERCENTAGE, getMemoryFromAnalysis=True, explicitPrecision=SINGLE, nodalOutputPrecision=SINGLE, echoPrint=OFF, modelPrint=OFF, contactPrint=OFF, historyPrint=OFF, userSubroutine='', scratch='', resultsFormat=ODB, multiprocessingMode=DEFAULT, numCpus=cpu, numDomains=cpu, numGPUs=0)
 
-
+def SubmitJob(job_name):
+    mdb.jobs[job_name].submit(consistencyChecking=OFF)
 
 
 
@@ -276,7 +284,7 @@ Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNS
 
 
 Create_Partion_by_Plane(myString,myPart,myID_3)
-Create_Set_Edge(0.0,myRadius,myLength/2.0,myString,myPart,"Set-Top-Edge")
+myEdge = Create_Set_Edge(0.0,myRadius,myLength/2.0,myString,myPart,"Set-Top-Edge")
 Create_Partion_by_Plane(myString,myPart,myID_1)
 Create_Partion_by_Plane(myString,myPart,myID_2)
 
@@ -290,5 +298,14 @@ Create_Set_Vertice(0.0,myRadius,myLength/2.0,myString,myPart,"SPLA_Point")
 
 Create_Composite_Layup(myString,myPart,"Cylinder_3D","Quasi_Isotropic",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
 
+CreateCutout(myString,myPart,7.5,myID_4,myEdge,0.0,0.0,myLength/2.0)
+
 Create_Mesh(myString,myPart,Mesh_Size)
-    
+myFace = Create_Set_Face(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surface")
+AssignStack(myString,myPart,myFace)
+
+CreateJob(myString,"CFRP_Tube_1",8)
+SubmitJob("CFRP_Tube_1")
+
+
+#--------------------
