@@ -270,10 +270,10 @@ Create_Material_Data(myString,"CFRP",myE11,myE22,myE33,myNu12,myNu13,myNu23,myG1
 Create_Assembly(myString,myPart,"Cylinder-1")
 
 myRP1,myRP_Position1 = Create_Reference_Point(0.0,0.0,0.0,myString,"RP-1")
-myRP2,myRP_Position2 = Create_Reference_Point(0.0,0.0,myLength,myString,"RP-2")
+#myRP2,myRP_Position2 = Create_Reference_Point(0.0,0.0,myLength,myString,"RP-2")
 
 Create_Constraint_Equation(myString,"Constraint-RP-1","Cylinder-1."+str("Set-RP-1"),"RP-1")
-Create_Constraint_Equation(myString,"Constraint-RP-2","Cylinder-1."+str("Set-RP-2"),"RP-2")
+#Create_Constraint_Equation(myString,"Constraint-RP-2","Cylinder-1."+str("Set-RP-2"),"RP-2")
 
 #Create_Analysis_Step(myString,"Step-1","Initial",1.0,1.0,1E-05,100,ON)
 Create_Analysis_Step(myString,"Step-1","Initial",0.01,0.01,1E-015,300,ON)
@@ -305,7 +305,7 @@ myFace = Create_Set_Face(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surfac
 AssignStack(myString,myPart,myFace)
 
 CreateJob(myString,"CFRP_Tube_1",8)
-#SubmitJob("CFRP_Tube_1")
 
+SubmitJob("CFRP_Tube_1")
 
 #--------------------
