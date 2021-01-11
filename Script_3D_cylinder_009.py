@@ -21,6 +21,7 @@ import xyPlot
 import connectorBehavior
 import odbAccess
 from operator import add
+import numpy as np
 
 
 
