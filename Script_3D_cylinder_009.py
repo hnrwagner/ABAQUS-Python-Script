@@ -263,6 +263,36 @@ def Open_ODB_and_Write_NodeSet_data_to_text(model,step_name,variable_name,set_na
     np.savetxt(str(variable_name)+'_'+str(myString)+'.txt',Variable_v)
 
 
+def Open_ODB_and_Write_Max_Value_of_NodeSet_data_to_text(model,step_name,variable_name,variable_name_max,set_name,Variable_component):
+    # open ODB file - ABAQUS Result file
+    odb = session.openOdb(str(model)+'.odb')
+    
+    # list for the VARIABLE you want to evaluate
+    Variable_v = []
+    
+    # analysis step for your VARIABLE
+    lastStep=odb.steps[step_name]
+    
+    #loop over all increments of the analysis step and save VARIABLE information from each increment
+    for x in range(len(lastStep.frames)):
+        lastFrame = lastStep.frames[x]
+        Variable = lastFrame.fieldOutputs[variable_name]
+        center = odb.rootAssembly.nodeSets[set_name]
+        centerRForce = Variable.getSubset(region=center)
+       
+        # loop over the VARIABLE and save component (x,y,z - 0,1,2) to list
+        for i in centerRForce.values:
+            Variable_vr = [i.data[Variable_component]]
+            Variable_v = Variable_v + Variable_vr  
+    
+    # Max value of Variable_v
+    Max_Variable = [np.max(Variable_v)] 
+    Max_Variable_v = [Max_Variable]
+      
+    # write VARIABLE - component to text file
+    
+    np.savetxt(str(variable_name_max)+'_'+str(myString)+'.txt',Max_Variable_v)
+
 # variables
 
 myString = "Buckling_Analysis"
@@ -380,4 +410,5 @@ CreateJob(myString,"Alu_Cylinder",8)
 
 Open_ODB_and_Write_NodeSet_data_to_text("Alu_Cylinder","Step-2","RF","RP-1",2)
 Open_ODB_and_Write_NodeSet_data_to_text("Alu_Cylinder","Step-2","U","RP-1",2)
+Open_ODB_and_Write_Max_Value_of_NodeSet_data_to_text("Alu_Cylinder","Step-2","RF","N","RP-1",2)
 
