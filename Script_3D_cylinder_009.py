@@ -293,6 +293,18 @@ def Open_ODB_and_Write_Max_Value_of_NodeSet_data_to_text(model,step_name,variabl
     
     np.savetxt(str(variable_name_max)+'_'+str(myString)+'.txt',Max_Variable_v)
 
+#------------------------------------------------------------------------------
+
+def Write_Variable_to_text(variable,variable_name):
+    
+    # list for the VARIABLE you want to evaluate
+    Variable_v = [variable]
+      
+    # write VARIABLE - component to text file
+    
+    np.savetxt(str(variable_name)+'_'+str(myString)+'.txt',Variable_v)    
+    
+
 # variables
 
 myString = "Buckling_Analysis"
@@ -411,4 +423,4 @@ CreateJob(myString,"Alu_Cylinder",8)
 Open_ODB_and_Write_NodeSet_data_to_text("Alu_Cylinder","Step-2","RF","RP-1",2)
 Open_ODB_and_Write_NodeSet_data_to_text("Alu_Cylinder","Step-2","U","RP-1",2)
 Open_ODB_and_Write_Max_Value_of_NodeSet_data_to_text("Alu_Cylinder","Step-2","RF","N","RP-1",2)
-
+Write_Variable_to_text(myThickness,"Shell Thickness")
