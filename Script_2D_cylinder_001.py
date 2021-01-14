@@ -1,5 +1,8 @@
 #python #abaqus #abaqustutorial #hnrwagner 
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
 
 from abaqus import *
 from abaqusConstants import *
@@ -24,10 +27,13 @@ from operator import add
 import numpy as np
 
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # functions
 
-
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def Create_Part_3D_Cylinder(radius,length,thickness,part,model):
     s1 = mdb.models[model].ConstrainedSketch(name='__profile__', sheetSize=200.0)
@@ -363,9 +369,13 @@ def Write_Variable_to_text(variable,variable_name):
     
     np.savetxt(str(variable_name)+'_'+str(myString)+'.txt',Variable_v)    
     
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # variables
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 myString = "GNA"
 
 
@@ -394,7 +404,14 @@ Mesh_Size = 9.0
 
 # Imperfection Parameter
 myPerturbation = 0
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
 # create model
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 Create_Part_2D_Cylinder(myRadius,myLength,myThickness,myPart,myString)
 
@@ -435,7 +452,6 @@ Create_Partion_by_Plane_2D(myString,myPart,myID_1)
 Create_Partion_by_Plane_2D(myString,myPart,myID_2)
 
 
-
 Create_Set_Vertice(myRadius,0.0,myLength/2.0,myString,myPart,"SPLA_Point")
 Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","SPLA_Point","BC-Imperfection","Step-1",-myPerturbation,UNSET,UNSET,UNSET,UNSET,UNSET)
 
@@ -448,11 +464,25 @@ Create_Mesh_Shell(myString,myPart,Mesh_Size)
 myFace = Create_Set_Face(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surface")
 AssignStack(myString,myPart,myFace)
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+# create Job for analysis
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
 CreateJob(myString,myString,8)
 
 #SubmitJob(myString)
 
-#--------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+# evaluate ABAQUS results
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-1","RF","RP-1",2)
 Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-1","U","RP-1",2)
