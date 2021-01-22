@@ -653,4 +653,4 @@ for ic in range(Iteration_Start,Iteration_End,Iteration_Increment):
     P.append(myPerturbation/myRadius)
                                                                            
     Write_Variable_to_text(N,"Buckling Load")
-    Write_Variable_to_text(P,"LRSM_Radius")
+    Write_Variable_to_text(P,"LRSM_Radius_to_Shell_Radius_ratio")
