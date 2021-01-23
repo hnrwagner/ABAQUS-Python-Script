@@ -548,7 +548,7 @@ myG23 = 3230
 
 myLaminate = [34,-34,0,0,53,-53]
 
-myPlyNumber = len(myAngle)
+myPlyNumber = len(myLaminate)
 
 
 Mesh_Size = 9.0
