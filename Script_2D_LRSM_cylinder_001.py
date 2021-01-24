@@ -357,10 +357,10 @@ def Write_Variable_to_text(variable,variable_name):
     
 #------------------------------------------------------------------------------
 
-def Create_LRSM_Surface(model,part,id_plane,edge,LRSM_radius,Mesh_Size):
+def Create_LRSM_Surface(model,part,id_plane,edge,LRSM_radius,Mesh_Size,length):
     p = mdb.models[model].parts[part]
     f, e, d = p.faces, p.edges, p.datums
-    t = p.MakeSketchTransform(sketchPlane=d[id_plane], sketchUpEdge=edge, sketchPlaneSide=SIDE2, origin=(0.0, 0.0, 400.0))
+    t = p.MakeSketchTransform(sketchPlane=d[id_plane], sketchUpEdge=edge, sketchPlaneSide=SIDE2, origin=(0.0, 0.0, length))
     s = mdb.models[model].ConstrainedSketch(name='__profile__', sheetSize=5000.0, gridSpacing=100.0, transform=t)
     g, v, d, c = s.geometry, s.vertices, s.dimensions, s.constraints
     s.setPrimaryObject(option=SUPERIMPOSE)
@@ -372,6 +372,7 @@ def Create_LRSM_Surface(model,part,id_plane,edge,LRSM_radius,Mesh_Size):
     p.PartitionFaceBySketchThruAll(sketchPlane=d1[id_plane], sketchUpEdge=edge, faces=f, sketchPlaneSide=SIDE2, sketch=s)
     s.unsetPrimaryObject()
     del mdb.models[model].sketches['__profile__']
+        
 #------------------------------------------------------------------------------
 
 def Boolean_Difference(model,part,set_name,first_set,second_set):
@@ -531,22 +532,22 @@ def create_GeneralStiffness(model,part,Stiff_Name,A11, A12, A22, A13, A23, A33, 
 
 
 myRadius = 400.0
-myThickness = 0.75
-myLength = 800.0
+myThickness = 4.32
+myLength = 1224.28
 
 myPart = "Cylinder"
 
 # material parameters
 
-myE11 = 152400
-myE22 = 8800
+myE11 = 140894
+myE22 = 9714
 myNu12 = 0.31
 myG12 = 4900
 myG13 = 4900
 myG23 = 3230
 
 
-myLaminate = [34,-34,0,0,53,-53]
+myLaminate = [23,0,-23,-23,0,23,23,0,-23,-23,0,23,23,0,-23,-23,0,23,23,0,-23,-23,0,23]
 
 myPlyNumber = len(myLaminate)
 
@@ -561,12 +562,12 @@ N = []
 P = []
 for ic in range(Iteration_Start,Iteration_End,Iteration_Increment):
     
-    myString = "GNIA_LRSM_Loop_"+str(ic)
+    myString = "NDL_LRSM_Loop_"+str(ic)
     mdb.Model(name=myString)
     
     # Imperfection Parameter
     myPerturbation = myRadius*0.4*ic/Iteration_End
-    LRSM_Factor = 1000.0
+    LRSM_Factor = 1.0
     
     
     #------------------------------------------------------------------------------
@@ -587,8 +588,8 @@ for ic in range(Iteration_Start,Iteration_End,Iteration_Increment):
     Create_Set_All_Faces(myString,myPart,"Cylinder_2D")
     
     
-    myEdge = Create_Set_Edge(myRadius,0.0,0.0,myString,myPart,"Set-RP-1")
-    Create_Set_Edge(myRadius,0.0,myLength,myString,myPart,"Set-RP-2")
+    Create_Set_Edge(myRadius,0.0,0.0,myString,myPart,"Set-RP-1")
+    myEdge = Create_Set_Edge(myRadius,0.0,myLength,myString,myPart,"Set-RP-2")
     Create_Set_Surface(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surface")
     myFace = Create_Set_Face(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Face")
     Create_Set_Surface(myRadius,0.0,myLength/2.0,myString,myPart,"Internal_Surface")
@@ -611,8 +612,7 @@ for ic in range(Iteration_Start,Iteration_End,Iteration_Increment):
     Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,SET,SET,SET)
     Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-1",UNSET,UNSET,5,UNSET,UNSET,UNSET)
     
-    
-    Create_LRSM_Surface(myString,myPart,myID_1,myEdge,myPerturbation,Mesh_Size)
+    Create_LRSM_Surface(myString,myPart,myID_1,myEdge,myPerturbation,Mesh_Size,myLength/2.0)
     Create_Set_Face(0.0,myRadius,myLength/2.0,myString,myPart,"LRSM_Face")
     Boolean_Difference(myString,myPart,"LRSM_Difference_Face","Outer_Face","LRSM_Face")
     Create_Partion_by_Plane_2D(myString,myPart,myID_1)
