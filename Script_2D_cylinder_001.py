@@ -457,7 +457,7 @@ Create_Boundary_Condition_by_Instance(myString,"Cylinder-1","SPLA_Point","BC-Imp
 
 
 Create_Composite_Layup_2D(myString,myPart,"Cylinder_2D","An_Isotropic",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
-Create_Isotropic_Section_2D(myString,"Alu_section","Alu",myThickness)
+#Create_Isotropic_Section_2D(myString,"Alu_section","Alu",myThickness)
 
 
 Create_Mesh_Shell(myString,myPart,Mesh_Size)
