@@ -429,7 +429,7 @@ Create_Set_Surface(myRadius,0.0,myLength/2.0,myString,myPart,"Outer_Surface")
 Create_Set_Surface(myRadius,0.0,myLength/2.0,myString,myPart,"Internal_Surface")
 
 Create_Material_Data_2D(myString,"CFRP",myE11,myE22,myNu12,myG12,myG13,myG23)
-Create_Material_Isotropic(myString,"Alu",myE,myNu,myY)
+#Create_Material_Isotropic(myString,"Alu",myE,myNu,myY)
 
 Create_Assembly(myString,myPart,"Cylinder-1")
 
