@@ -145,14 +145,25 @@ def Create_Set_Vertice_2(x,y,z,model,part,set_name):
     a.Set(vertices=vertice, name=set_name)
 
 #-----------------------------------------------------------------------------
-def Create_Set_Surface(x,y,z,model,part,set_name):
+
+def Create_Set_Internal_Surface(x,y,z,model,part,set_name):
+    face = ()
+    p = mdb.models[model].parts[part]
+    s = p.faces
+    myFace = s.findAt((x,y,z),)
+    face = face + (s[myFace.index:myFace.index+1], )
+    p.Surface(side2Faces=face, name=set_name)
+#-----------------------------------------------------------------------------
+
+def Create_Set_External_Surface(x,y,z,model,part,set_name):
     face = ()
     p = mdb.models[model].parts[part]
     s = p.faces
     myFace = s.findAt((x,y,z),)
     face = face + (s[myFace.index:myFace.index+1], )
     p.Surface(side1Faces=face, name=set_name)
-   
+
+#-----------------------------------------------------------------------------
 
 def Create_Assembly(model,part,instance_name):
     a = mdb.models[model].rootAssembly
@@ -460,8 +471,8 @@ for ic in range(0,1,1):
     
     Create_Set_Edge(myRadius,0.0,0.0,myString,myPart_2,"Set-RP-1")
     Create_Set_Edge(myRadius_r,0.0,myLength,myString,myPart_2,"Set-RP-2")
-    Create_Set_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
-    Create_Set_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Internal_Surface")
+    Create_Set_External_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
+    Create_Set_Internal_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Internal_Surface")
     Create_Set_All_Faces(myString,myPart_2,"Cone_2D")
     
     Create_Material_Data_2D(myString,"CFRP",myE11,myE22,myNu12,myG12,myG13,myG23)
@@ -489,7 +500,7 @@ for ic in range(0,1,1):
     Create_Set_Vertice_2((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,"Cone-1-1","SPLA_Point")
     Create_Boundary_Condition_for_Assembly(myString,"SPLA_Point","SPDA-Imperfection","Step-1",-myPerturbation,UNSET,UNSET,UNSET,UNSET,UNSET)
     #Create_SPLA(myString,"Cylinder-1","SPLA_Point","BC-Imperfection","Step-1",myPerturbation)
-    
+    #Create_Pressure_Load(myString,"Cone-1-1","External_Pressure","Step-1","Outer_Surface",1.0)
     
     Create_Composite_Layup_2D(myString,myPart_2,"Cone_2D","An_Isotropic",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
     Create_Isotropic_Section_2D(myString,"Alu_section","Alu",myThickness)
