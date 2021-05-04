@@ -183,7 +183,7 @@ def Create_Reference_Point(x,y,z,model,setname):
     return myRP,myRP_Position
 
 def Create_Constraint_Equation(model,constraint_name,set_name,set_name_rp):
-    mdb.models[model].Equation(name=constraint_name, terms=((1.0, set_name, 3), (-1.0, set_name_rp, 3)))
+    mdb.models[model].Equation(name=constraint_name, terms=((1.0, set_name, 2), (-1.0, set_name_rp, 2)))
 
 
 def Create_Boundary_Condition_by_Instance(model,instance_name,set_name,BC_name,step_name,u1_BC,u2_BC,u3_BC,ur1_BC,ur2_BC,ur3_BC):
@@ -202,14 +202,12 @@ def Create_Boundary_Condition_by_RP(model,RP_name,BC_name,step_name,u1_BC,u2_BC,
     region = a.sets[RP_name]
     mdb.models[model].DisplacementBC(name=BC_name, createStepName=step_name, region=region, u1=u1_BC, u2=u2_BC, u3=u3_BC, ur1=ur1_BC, ur2=ur2_BC, ur3=ur3_BC, amplitude=UNSET, distributionType=UNIFORM, fieldName='', localCsys=None)  
 
-#-----------------------------------------------------------------------------
+
 def Create_Analysis_Step(model,step_name,pre_step_name,Initial_inc,Max_inc,Min_inc,Inc_Number,NL_ON_OFF):
     a = mdb.models[model].StaticStep(name=step_name, previous=pre_step_name, initialInc=Initial_inc, maxInc=Max_inc, minInc=Min_inc)
     a = mdb.models[model].steps[step_name].setValues(maxNumInc=Inc_Number)
     a = mdb.models[model].steps[step_name].setValues(nlgeom=NL_ON_OFF)
     #a = mdb.models[model].steps[step_name].setValues(stabilizationMagnitude=1E-009, stabilizationMethod=DAMPING_FACTOR, continueDampingFactors=False, adaptiveDampingRatio=None)
-    a = mdb.models[model].fieldOutputRequests['F-Output-1'].setValues(variables=('S', 'PE', 'PEEQ', 'PEMAG', 'LE', 'U', 'RF', 'CF', 'P', 'CSTRESS', 'CDISP'))
-#-----------------------------------------------------------------------------
 
 def Create_Partion_by_Plane(model,part,id_plane):
     p = mdb.models[model].parts[part]
@@ -292,13 +290,6 @@ def Create_SPLA(model,instance_name,set_name,load_name,step_name,load):
     region = a.instances[instance_name].sets[set_name]
     mdb.models[model].ConcentratedForce(name=load_name, createStepName=step_name, region=region, cf1=-load, distributionType=UNIFORM, field='', localCsys=None)
 
-#------------------------------------------------------------------------------
-def Create_CF(model,set_name,load_name,step_name,load):
-    a = mdb.models[model].rootAssembly
-    region = a.sets[set_name]
-    mdb.models[model].ConcentratedForce(name=load_name, createStepName=step_name, region=region, cf1=UNSET,cf2=UNSET,cf3=load, distributionType=UNIFORM, field='', localCsys=None)
-
-#------------------------------------------------------------------------------
 
 def Create_Pressure_Load(model,instance_name,load_name,step_name,surface,load):
     a = mdb.models[model].rootAssembly
@@ -400,6 +391,13 @@ def Open_ODB_and_Write_NodeSet_data_to_text(model,step_name,variable_name,set_na
 
 #------------------------------------------------------------------------------
 
+def Create_CF(model,set_name,load_name,step_name,x_load,y_load,z_load):
+    a = mdb.models[model].rootAssembly
+    region = a.sets[set_name]
+    mdb.models[model].ConcentratedForce(name=load_name, createStepName=step_name, region=region, cf1=x_load,cf2=y_load,cf3=z_load, distributionType=UNIFORM, field='', localCsys=None)
+
+#------------------------------------------------------------------------------
+
 def Write_Variable_to_text(variable,variable_name):
          
     # write VARIABLE - component to text file
@@ -427,14 +425,16 @@ mySlant_Length = myLength/np.cos(mySemi_Vertex_Angle*np.pi/180.0)
 myRadius_r = myRadius+myLength*tan(mySemi_Vertex_Angle*np.pi/180.0)
 
 
-myPart = "Cylinder"
-myPart_2 = "Cone"
+
+myPart = "Cone"
 # material parameters
 
-myE = 210490
-myNu = 0.281
-myY = 230.6
-
+myE11 = 208000
+myE22 = 208000
+myNu12 = 0.3
+myG12 = 80000
+myG13 = 80000
+myG23 = 80000
 
 
 myAngle = [45,-45,0,90,90,0,-45,45]
@@ -446,77 +446,61 @@ Mesh_Size = 1.5
 
 N = []
 P = []
-for ic in range(1,2,1):
+for ic in range(0,1,1):
     
     myString = "GNIA_eP_aC_Loop_"+str(ic)
     mdb.Model(name=myString)
     
     # Imperfection Parameter
     myPerturbation = 0.3*ic
+    Create_Part_2D_Cone(myRadius,myLength,mySemi_Vertex_Angle,myPart,myString)
     
+    myID_1 = Create_Datum_Plane_by_Principal(XZPLANE,myPart,myString,myLength/2.0)
+    myID_2 = Create_Datum_Plane_by_Principal(XYPLANE,myPart,myString,0.0)
+    myID_3 = Create_Datum_Plane_by_Principal(YZPLANE,myPart,myString,0.0)
     
-    #------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------
+    Create_Set_Edge(myRadius_r,myLength,0.0,myString,myPart,"Set-RP-2")
+    Create_Set_Edge(myRadius,0.0,0.0,myString,myPart,"Set-RP-1")
+    Create_Set_External_Surface((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Outer_Surface")
+    Create_Set_Internal_Surface((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Internal_Surface")
+    Create_Set_All_Faces(myString,myPart,"Cone_2D")
     
-    # create model
+    Create_Material_Data_2D(myString,"CFRP",myE11,myE22,myNu12,myG12,myG13,myG23)
     
-    #------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------
+    Create_Assembly(myString,myPart,"Cone")
     
-    Create_Part_2D_Cylinder(myRadius,myLength,myPart,myString)
-    Create_Set_All_Faces(myString,myPart,"Cylinder_2D")
-    Create_Part_2D_Cone(myRadius,myLength,mySemi_Vertex_Angle,myPart_2,myString)
-    
-    Create_Assembly(myString,myPart,"Cylinder-1")
-    Create_Assembly(myString,myPart_2,"Cone-1")
-    Rotate_Instance(myString,"Cone-1",1,0,0,90.0)
-    Boolean_Merge_and_Remove(myString,myPart_2,"Cone-1","Cylinder-1","Cone-1")
-    
-    myID_1 = Create_Datum_Plane_by_Principal(XZPLANE,myPart_2,myString,0.0)
-    myID_2 = Create_Datum_Plane_by_Principal(XYPLANE,myPart_2,myString,myLength/2.0)
-    myID_3 = Create_Datum_Plane_by_Principal(YZPLANE,myPart_2,myString,0.0)
-    
-    Create_Set_Edge(myRadius,0.0,0.0,myString,myPart_2,"Set-RP-1")
-    Create_Set_Edge(myRadius_r,0.0,myLength,myString,myPart_2,"Set-RP-2")
-    Create_Set_External_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
-    Create_Set_Internal_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Internal_Surface")
-    Create_Set_All_Faces(myString,myPart_2,"Cone_2D")
-    
-    # Create_Material_Data_2D(myString,"CFRP",myE11,myE22,myNu12,myG12,myG13,myG23)
-    Create_Material_Isotropic(myString,"Steel",myE,myNu,myY)
     myRP1,myRP_Position1 = Create_Reference_Point(0.0,0.0,0.0,myString,"RP-1")
     #myRP2,myRP_Position2 = Create_Reference_Point(0.0,0.0,myLength,myString,"RP-2")
     
-    Create_Constraint_Equation(myString,"Constraint-RP-1","Cone-1-1."+str("Set-RP-1"),"RP-1")
+    Create_Constraint_Equation(myString,"Constraint-RP-1","Cone."+str("Set-RP-1"),"RP-1")
     #Create_Constraint_Equation(myString,"Constraint-RP-2","Cylinder-1."+str("Set-RP-2"),"RP-2")
     
-    Create_Analysis_Step(myString,"Step-1","Initial",0.1,0.1,1E-05,300,ON)
+    Create_Analysis_Step(myString,"Step-1","Initial",1,1,1E-015,300,ON)
     Create_Analysis_Step(myString,"Step-2","Step-1",0.01,0.01,1E-05,300,ON)
     
-    Create_Boundary_Condition_by_Instance(myString,"Cone-1-1","Set-RP-1","BC-Set-RP-1","Initial",SET,SET,UNSET,SET,SET,SET)
-    Create_Boundary_Condition_by_Instance(myString,"Cone-1-1","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,SET,SET,SET)
-    # Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNSET,UNSET,5,UNSET,UNSET,UNSET)
+    Create_Boundary_Condition_by_Instance(myString,"Cone","Set-RP-1","BC-Set-RP-1","Initial",SET,UNSET,SET,SET,SET,SET)
+    Create_Boundary_Condition_by_Instance(myString,"Cone","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,SET,SET,SET)
+    #Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNSET,1,UNSET,UNSET,UNSET,UNSET)
+    Create_CF(myString,"RP-1","CF","Step-1",UNSET,100.0,UNSET)
+    
+    Create_Partion_by_Plane_2D(myString,myPart,myID_3)
+    myEdge = Create_Set_Edge((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Set-Top-Edge")
+    Create_Partion_by_Plane_2D(myString,myPart,myID_1)
+    Create_Partion_by_Plane_2D(myString,myPart,myID_2)
     
     
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_3)
-    myEdge = Create_Set_Edge(0.0,(myRadius+myRadius_r)/2.0,myLength/2.0,myString,myPart_2,"Set-Top-Edge")
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_1)
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_2)
-    
-    
-    Create_Set_Vertice_2((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,"Cone-1-1","SPLA_Point")
+    Create_Set_Vertice_2((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,"Cone","SPLA_Point")
     Create_Boundary_Condition_for_Assembly(myString,"SPLA_Point","SPDA-Imperfection","Step-1",-myPerturbation,UNSET,UNSET,UNSET,UNSET,UNSET)
-    Deactivate_BC(myString,"SPDA-Imperfection","Step-2")
-    Create_CF(myString,"RP-1","CF","Step-1",100.0)
-    Create_Pressure_Load(myString,"Cone-1-1","External_Pressure","Step-2","Outer_Surface",10.0)
+    #Create_SPLA(myString,"Cylinder-1","SPLA_Point","BC-Imperfection","Step-1",myPerturbation)
+    Create_Pressure_Load(myString,"Cone","External_Pressure","Step-2","Outer_Surface",10.0)
     
-    # Create_Composite_Layup_2D(myString,myPart_2,"Cone_2D","An_Isotropic",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
-    Create_Isotropic_Section_2D(myString,"Steel_section","Steel",myThickness)
-    Assign_Isotropic_Material(myString,myPart_2,"Cone_2D","Steel_section")
+    Create_Composite_Layup_2D(myString,myPart,"Cone_2D","Layup",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
+    Create_Isotropic_Section_2D(myString,"Alu_section","Alu",myThickness)
     
-    Create_Mesh_Shell(myString,myPart_2,Mesh_Size)
-    myFace = Create_Set_Face((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
-    # AssignStack(myString,myPart_2,myFace)
+    
+    Create_Mesh_Shell(myString,myPart,Mesh_Size)
+    myFace = Create_Set_Face((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Outer_Surface")
+    AssignStack(myString,myPart,myFace)
     
     #------------------------------------------------------------------------------
     #------------------------------------------------------------------------------
@@ -538,7 +522,7 @@ for ic in range(1,2,1):
     #------------------------------------------------------------------------------
     #------------------------------------------------------------------------------
     
-    N.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","RP-1",2))
+    N.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","RP-1",1))
     P.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","SPLA_POINT",0))
                                                                            
     Write_Variable_to_text(N,"Buckling Load")
