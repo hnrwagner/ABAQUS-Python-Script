@@ -413,7 +413,7 @@ def Write_Variable_to_text(variable,variable_name):
 myRadius = 33.0
 myThickness = 0.1
 myLength = 100.0
-mySemi_Vertex_Angle = 0.0
+mySemi_Vertex_Angle = -10.0
 mySlant_Length = myLength/np.cos(mySemi_Vertex_Angle*np.pi/180.0)
 myRadius_r = myRadius+myLength*tan(mySemi_Vertex_Angle*np.pi/180.0)
 
