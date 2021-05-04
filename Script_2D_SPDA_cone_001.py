@@ -183,7 +183,7 @@ def Create_Reference_Point(x,y,z,model,setname):
     return myRP,myRP_Position
 
 def Create_Constraint_Equation(model,constraint_name,set_name,set_name_rp):
-    mdb.models[model].Equation(name=constraint_name, terms=((1.0, set_name, 3), (-1.0, set_name_rp, 3)))
+    mdb.models[model].Equation(name=constraint_name, terms=((1.0, set_name, 2), (-1.0, set_name_rp, 2)))
 
 
 def Create_Boundary_Condition_by_Instance(model,instance_name,set_name,BC_name,step_name,u1_BC,u2_BC,u3_BC,ur1_BC,ur2_BC,ur3_BC):
@@ -410,16 +410,16 @@ def Write_Variable_to_text(variable,variable_name):
 # so check if myLength is long enough (or the absolute of mySemi_Vertex_Angle is small enough)
 # myRadius_r cannot be zero or negativ
 
-myRadius = 400.0
-myThickness = 0.75
-myLength = 300.0
-mySemi_Vertex_Angle = -45.0
+myRadius = 33.0
+myThickness = 0.1
+myLength = 100.0
+mySemi_Vertex_Angle = 0.0
 mySlant_Length = myLength/np.cos(mySemi_Vertex_Angle*np.pi/180.0)
 myRadius_r = myRadius+myLength*tan(mySemi_Vertex_Angle*np.pi/180.0)
 
 
-myPart = "Cylinder"
-myPart_2 = "Cone"
+
+myPart = "Cone"
 # material parameters
 
 myE11 = 208000
@@ -435,7 +435,7 @@ myAngle = [45,-45,0,90,90,0,-45,45]
 myPlyNumber = len(myAngle)
 
 
-Mesh_Size = 9.0
+Mesh_Size = 1.0
 
 N = []
 P = []
@@ -446,69 +446,54 @@ for ic in range(0,1,1):
     
     # Imperfection Parameter
     myPerturbation = 0.01*ic
+    Create_Part_2D_Cone(myRadius,myLength,mySemi_Vertex_Angle,myPart,myString)
     
+    myID_1 = Create_Datum_Plane_by_Principal(XZPLANE,myPart,myString,myLength/2.0)
+    myID_2 = Create_Datum_Plane_by_Principal(XYPLANE,myPart,myString,0.0)
+    myID_3 = Create_Datum_Plane_by_Principal(YZPLANE,myPart,myString,0.0)
     
-    #------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------
-    
-    # create model
-    
-    #------------------------------------------------------------------------------
-    #------------------------------------------------------------------------------
-    
-    Create_Part_2D_Cylinder(myRadius,myLength,myPart,myString)
-    Create_Set_All_Faces(myString,myPart,"Cylinder_2D")
-    Create_Part_2D_Cone(myRadius,myLength,mySemi_Vertex_Angle,myPart_2,myString)
-    
-    Create_Assembly(myString,myPart,"Cylinder-1")
-    Create_Assembly(myString,myPart_2,"Cone-1")
-    Rotate_Instance(myString,"Cone-1",1,0,0,90.0)
-    Boolean_Merge_and_Remove(myString,myPart_2,"Cone-1","Cylinder-1","Cone-1")
-    
-    myID_1 = Create_Datum_Plane_by_Principal(XZPLANE,myPart_2,myString,0.0)
-    myID_2 = Create_Datum_Plane_by_Principal(XYPLANE,myPart_2,myString,myLength/2.0)
-    myID_3 = Create_Datum_Plane_by_Principal(YZPLANE,myPart_2,myString,0.0)
-    
-    Create_Set_Edge(myRadius,0.0,0.0,myString,myPart_2,"Set-RP-1")
-    Create_Set_Edge(myRadius_r,0.0,myLength,myString,myPart_2,"Set-RP-2")
-    Create_Set_External_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
-    Create_Set_Internal_Surface((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Internal_Surface")
-    Create_Set_All_Faces(myString,myPart_2,"Cone_2D")
+    Create_Set_Edge(myRadius_r,myLength,0.0,myString,myPart,"Set-RP-2")
+    Create_Set_Edge(myRadius,0.0,0.0,myString,myPart,"Set-RP-1")
+    Create_Set_External_Surface((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Outer_Surface")
+    Create_Set_Internal_Surface((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Internal_Surface")
+    Create_Set_All_Faces(myString,myPart,"Cone_2D")
     
     Create_Material_Data_2D(myString,"CFRP",myE11,myE22,myNu12,myG12,myG13,myG23)
+    
+    Create_Assembly(myString,myPart,"Cone")
     
     myRP1,myRP_Position1 = Create_Reference_Point(0.0,0.0,0.0,myString,"RP-1")
     #myRP2,myRP_Position2 = Create_Reference_Point(0.0,0.0,myLength,myString,"RP-2")
     
-    Create_Constraint_Equation(myString,"Constraint-RP-1","Cone-1-1."+str("Set-RP-1"),"RP-1")
+    Create_Constraint_Equation(myString,"Constraint-RP-1","Cone."+str("Set-RP-1"),"RP-1")
     #Create_Constraint_Equation(myString,"Constraint-RP-2","Cylinder-1."+str("Set-RP-2"),"RP-2")
     
     Create_Analysis_Step(myString,"Step-1","Initial",1,1,1E-015,300,ON)
     Create_Analysis_Step(myString,"Step-2","Step-1",0.01,0.01,1E-05,300,ON)
     
-    Create_Boundary_Condition_by_Instance(myString,"Cone-1-1","Set-RP-1","BC-Set-RP-1","Initial",SET,SET,UNSET,SET,SET,SET)
-    Create_Boundary_Condition_by_Instance(myString,"Cone-1-1","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,SET,SET,SET)
-    Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNSET,UNSET,5,UNSET,UNSET,UNSET)
+    Create_Boundary_Condition_by_Instance(myString,"Cone","Set-RP-1","BC-Set-RP-1","Initial",SET,UNSET,SET,SET,SET,SET)
+    Create_Boundary_Condition_by_Instance(myString,"Cone","Set-RP-2","BC-Set-RP-2","Initial",SET,SET,SET,SET,SET,SET)
+    Create_Boundary_Condition_by_RP(myString,"RP-1","Displacement_Load","Step-2",UNSET,1,UNSET,UNSET,UNSET,UNSET)
     
     
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_3)
-    myEdge = Create_Set_Edge(0.0,(myRadius+myRadius_r)/2.0,myLength/2.0,myString,myPart_2,"Set-Top-Edge")
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_1)
-    Create_Partion_by_Plane_2D(myString,myPart_2,myID_2)
+    Create_Partion_by_Plane_2D(myString,myPart,myID_3)
+    myEdge = Create_Set_Edge((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Set-Top-Edge")
+    Create_Partion_by_Plane_2D(myString,myPart,myID_1)
+    Create_Partion_by_Plane_2D(myString,myPart,myID_2)
     
     
-    Create_Set_Vertice_2((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,"Cone-1-1","SPLA_Point")
+    Create_Set_Vertice_2((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,"Cone","SPLA_Point")
     Create_Boundary_Condition_for_Assembly(myString,"SPLA_Point","SPDA-Imperfection","Step-1",-myPerturbation,UNSET,UNSET,UNSET,UNSET,UNSET)
     #Create_SPLA(myString,"Cylinder-1","SPLA_Point","BC-Imperfection","Step-1",myPerturbation)
     #Create_Pressure_Load(myString,"Cone-1-1","External_Pressure","Step-1","Outer_Surface",1.0)
     
-    Create_Composite_Layup_2D(myString,myPart_2,"Cone_2D","An_Isotropic",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
+    Create_Composite_Layup_2D(myString,myPart,"Cone_2D","Layup",myPlyNumber,"CFRP",myThickness/myPlyNumber,myAngle)
     Create_Isotropic_Section_2D(myString,"Alu_section","Alu",myThickness)
     
     
-    Create_Mesh_Shell(myString,myPart_2,Mesh_Size)
-    myFace = Create_Set_Face((myRadius+myRadius_r)/2.0,0.0,myLength/2.0,myString,myPart_2,"Outer_Surface")
-    AssignStack(myString,myPart_2,myFace)
+    Create_Mesh_Shell(myString,myPart,Mesh_Size)
+    myFace = Create_Set_Face((myRadius+myRadius_r)/2.0,myLength/2.0,0.0,myString,myPart,"Outer_Surface")
+    AssignStack(myString,myPart,myFace)
     
     #------------------------------------------------------------------------------
     #------------------------------------------------------------------------------
@@ -530,7 +515,7 @@ for ic in range(0,1,1):
     #------------------------------------------------------------------------------
     #------------------------------------------------------------------------------
     
-    N.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","RP-1",2))
+    N.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","RP-1",1))
     P.append(Open_ODB_and_Write_NodeSet_data_to_text(myString,"Step-2","RF","SPLA_POINT",0))
                                                                            
     Write_Variable_to_text(N,"Buckling Load")
